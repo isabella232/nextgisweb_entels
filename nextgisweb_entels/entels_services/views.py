@@ -9,8 +9,8 @@ from services import (
 def setup_pyramid(comp, config):
     config.add_route(
         'nextgisweb_entels.store',
-        '/layer/{id:\d+}/store_api/entels',
+        '/entels/layer/{id:\d+}/store_api/',
         factory=resource_factory).add_view(store)
     config.add_route(
         'nextgisweb_entels.geocollection',
-        '/geocollection/entels').add_view(geocollection)
+        '/entels/geocollection').add_view(geocollection)
