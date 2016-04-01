@@ -1,28 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import json
-import geojson
-
 from datetime import datetime
 
+import geojson
+from nextgisweb.feature_layer import IFeatureLayer
+from nextgisweb.geometry import box
+from nextgisweb.models import DBSession
+from nextgisweb.pyramid.util import viewargs
+from nextgisweb.resource import DataScope
+from nextgisweb.vector_layer import VectorLayer
 from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.response import Response
-
-from nextgisweb.feature_layer import IFeatureLayer
-from nextgisweb.resource import DataScope
-from nextgisweb.pyramid.util import viewargs
-from nextgisweb.models import DBSession
-from nextgisweb.geometry import box
-from nextgisweb.postgis import PostgisLayer
-from nextgisweb.vector_layer import VectorLayer
+from sqlalchemy.sql.operators import ilike_op
 
 from GeoJsonFeatureList import GeoJsonFeatureList
-
 from helpers import (
-    calculate_bbox,
     geometry_transform,
-    geom_from_wkt,
-    stripguid,
     ComplexEncoder
 )
 
@@ -35,18 +28,15 @@ def store(request):
     request.resource_permission(PD_READ)
     query = request.context.feature_query()
 
-    if not ('geometry' in request.GET or 'guids' in request.GET):
-        raise HTTPBadRequest()
-
     features = GeoJsonFeatureList()
+
     try:
-        if 'guids' in request.GET:
-            guids = str(request.GET['guids']).lower()
-            if guids == 'true':
-                query.fields('uniq_uid')
-        if 'geometry' in request.GET:
-            geometry = str(request.GET['geometry']).lower()
-            if geometry == 'true': query.geom()
+        filters = []
+        for field in request.POST:
+            if not request.POST[field]:
+                continue
+            filters.append((field, ilike_op, '%' + request.POST[field] + '%'))
+        query.filter(filters)
         for f in query():
             if f.geom:
                 f._geom = geometry_transform(f.geom, f.layer.srs_id, 4326)
