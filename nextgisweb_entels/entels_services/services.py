@@ -27,6 +27,7 @@ PD_WRITE = DataScope.write
 def store(request):
     request.resource_permission(PD_READ)
     query = request.context.feature_query()
+    query.geom()
 
     features = GeoJsonFeatureList()
 
